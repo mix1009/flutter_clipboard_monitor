@@ -1,3 +1,3 @@
-## 0.0.1
+## 0.9.0 - 2020/11/09
 
-* TODO: Describe initial release.
+* Initial release. supports Android & iOS.

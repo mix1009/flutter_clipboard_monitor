@@ -1,15 +1,22 @@
 # clipboard_monitor
 
-A new flutter plugin project.
+Flutter plugin for monitoring system clipboard on Android and iOS.
 
-## Getting Started
+## Usage
+```
+import 'package:clipboard_monitor/clipboard_monitor.dart';
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+void startClipboardMonitor()  {
+    ClipboardMonitor.registerCallback(onClipboardText);
+}
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+void stopClipboardMonitor()  {
+    ClipboardMonitor.unregisterCallback(onClipboardText);
+}
+
+void onClipboardText(String text) {
+    print("clipboard changed: $text");
+}
+
+```
 
