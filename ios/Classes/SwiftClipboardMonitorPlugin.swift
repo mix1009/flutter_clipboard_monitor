@@ -2,13 +2,26 @@ import Flutter
 import UIKit
 
 public class SwiftClipboardMonitorPlugin: NSObject, FlutterPlugin {
-  public static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "clipboard_monitor", binaryMessenger: registrar.messenger())
-    let instance = SwiftClipboardMonitorPlugin()
-    registrar.addMethodCallDelegate(instance, channel: channel)
-  }
+    private  var channel: FlutterMethodChannel!
+    
+    public static func register(with registrar: FlutterPluginRegistrar) {
+        let instance = SwiftClipboardMonitorPlugin()
+        instance.channel = FlutterMethodChannel(name: "clipboard_monitor", binaryMessenger: registrar.messenger())
 
-  public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    result("iOS " + UIDevice.current.systemVersion)
-  }
+        registrar.addMethodCallDelegate(instance, channel: instance.channel)
+    }
+
+    @objc func pasteboardChanged(sender: NSNotification) {
+        let pasteboardString: String? = UIPasteboard.general.string
+        if let theString = pasteboardString {
+            channel.invokeMethod("cliptext", arguments: theString)
+        }
+    }
+    
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        if call.method == "monitorClipboard" {
+            NotificationCenter.default.addObserver(self, selector: #selector(self.pasteboardChanged),
+                                                   name: UIPasteboard.changedNotification, object: nil)
+        }
+    }
 }

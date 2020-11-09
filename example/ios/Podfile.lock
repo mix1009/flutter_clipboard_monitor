@@ -1,0 +1,22 @@
+PODS:
+  - clipboard_monitor (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+
+DEPENDENCIES:
+  - clipboard_monitor (from `.symlinks/plugins/clipboard_monitor/ios`)
+  - Flutter (from `Flutter`)
+
+EXTERNAL SOURCES:
+  clipboard_monitor:
+    :path: ".symlinks/plugins/clipboard_monitor/ios"
+  Flutter:
+    :path: Flutter
+
+SPEC CHECKSUMS:
+  clipboard_monitor: 4189d994f3b3891fdaad682b29add54f48287b0e
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+
+PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+
+COCOAPODS: 1.9.3
