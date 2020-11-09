@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
 import 'package:clipboard_monitor/clipboard_monitor.dart';
 
 void main() {
@@ -14,31 +11,26 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  String _clipboardText = '';
+  final controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    controller.text = 'Copy some text from here.\n1234 5678';
+    ClipboardMonitor.registerCallback(onClipboardText);
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      platformVersion = await ClipboardMonitor.platformVersion;
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
+  @override
+  void dispose() {
+    ClipboardMonitor.unregisterCallback(onClipboardText);
+    super.dispose();
+  }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
+  void onClipboardText(String text) {
+    print("clipboard changed: $text");
     setState(() {
-      _platformVersion = platformVersion;
+      _clipboardText = text;
     });
   }
 
@@ -47,10 +39,17 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('clipboard_monitor example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            children: [
+              SizedBox(height: 10),
+              Text('Clipboard text: $_clipboardText\n'),
+              SizedBox(height: 30),
+              TextField(maxLines: 5, controller: controller),
+            ],
+          ),
         ),
       ),
     );
