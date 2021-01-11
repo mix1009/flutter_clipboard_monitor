@@ -40,6 +40,14 @@ class ClipboardMonitor {
     }
   }
 
+  static void unregisterAllCallbacks() {
+    _callbacks.clear();
+
+    if (Platform.isAndroid) {
+      _stopMonitoring();
+    }
+  }
+
   static Future<void> _handleMethodCall(MethodCall call) async {
     final args = call.arguments as String;
 
