@@ -1,16 +1,13 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/services.dart';
 
-// typedef OnClipboardTextFunction = void Function(String text);
-
 class ClipboardMonitor {
-  static const MethodChannel _channel = const MethodChannel('clipboard_monitor');
+  static const MethodChannel _channel =
+      const MethodChannel('clipboard_monitor');
 
   static var _monitoring = false;
 
-  static final _callbacks = List<Function(String)>();
+  static final _callbacks = List<Function(String)>.empty(growable: true);
 
   static Future<void> _startMonitoring() async {
     _monitoring = true;
@@ -23,6 +20,7 @@ class ClipboardMonitor {
     await _channel.invokeMethod('stopMonitoringClipboard');
   }
 
+  /// register callback for monitoring clipboard
   static void registerCallback(Function(String) func) {
     if (!_monitoring) {
       _startMonitoring();
@@ -30,22 +28,20 @@ class ClipboardMonitor {
     _callbacks.add(func);
   }
 
+  /// unregister callback for monitoring
   static void unregisterCallback(Function(String) func) {
     _callbacks.remove(func);
 
-    if (Platform.isAndroid && _callbacks.isEmpty) {
-      // remove the listener since there are no callbacks registered.
-      // nb: Not implemented on iOS yet so this will only affect android
+    if (_callbacks.isEmpty) {
       _stopMonitoring();
     }
   }
 
+  /// unregister all callbacks
   static void unregisterAllCallbacks() {
     _callbacks.clear();
 
-    if (Platform.isAndroid) {
-      _stopMonitoring();
-    }
+    _stopMonitoring();
   }
 
   static Future<void> _handleMethodCall(MethodCall call) async {

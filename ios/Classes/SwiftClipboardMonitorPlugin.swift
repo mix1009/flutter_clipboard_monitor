@@ -22,6 +22,8 @@ public class SwiftClipboardMonitorPlugin: NSObject, FlutterPlugin {
         if call.method == "monitorClipboard" {
             NotificationCenter.default.addObserver(self, selector: #selector(self.pasteboardChanged),
                                                    name: UIPasteboard.changedNotification, object: nil)
+        } else if call.method == "stopMonitoringClipboard" {
+            NotificationCenter.default.removeObserver(self, name: UIPasteboard.changedNotification, object: nil)
         }
     }
 }
