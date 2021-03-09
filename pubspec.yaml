@@ -1,11 +1,11 @@
 name: clipboard_monitor
 description: Flutter plugin for monitoring system clipboard on Android and iOS.
-version: 0.9.1
+version: 0.9.2
 homepage: https://github.com/mix1009/flutter_clipboard_monitor
 repository: https://github.com/mix1009/flutter_clipboard_monitor
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
   flutter: ">=1.20.0 <2.0.0"
 
 dependencies:

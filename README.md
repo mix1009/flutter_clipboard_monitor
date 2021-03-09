@@ -29,3 +29,6 @@ void stopAllClipboardMonitoring() {
 Clipboard monitoring will not work when app is not running.
 Also Android 10 (API level 29) and above restricts access to clipboard when app is not in focus.
 
+## Contributors
+
+[jinyus](https://github.com/jinyus)
