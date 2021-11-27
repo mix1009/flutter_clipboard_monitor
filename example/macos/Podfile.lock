@@ -1,0 +1,22 @@
+PODS:
+  - clipboard_monitor (0.0.1):
+    - FlutterMacOS
+  - FlutterMacOS (1.0.0)
+
+DEPENDENCIES:
+  - clipboard_monitor (from `Flutter/ephemeral/.symlinks/plugins/clipboard_monitor/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+
+EXTERNAL SOURCES:
+  clipboard_monitor:
+    :path: Flutter/ephemeral/.symlinks/plugins/clipboard_monitor/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
+
+SPEC CHECKSUMS:
+  clipboard_monitor: 8400bf876e8a5f987ca15164ce4eb8f24b2e78cd
+  FlutterMacOS: 57701585bf7de1b3fc2bb61f6378d73bbdea8424
+
+PODFILE CHECKSUM: 6eac6b3292e5142cfc23bdeb71848a40ec51c14c
+
+COCOAPODS: 1.11.2
