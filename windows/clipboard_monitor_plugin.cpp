@@ -47,8 +47,9 @@ namespace
     void HandleMethodCall(
         const flutter::MethodCall<flutter::EncodableValue> &method_call,
         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
-    void MonitorClipboard();
-    void StopMonitoringClipboard();
+    
+    void monitorClipboard();
+    void stopMonitoringClipboard();
 
     char* encode(const wchar_t* wstr, unsigned int codePage);
     wchar_t* decode(const char* encodedStr, unsigned int codePage);
@@ -142,7 +143,7 @@ namespace
     case WM_DESTROYCLIPBOARD:
       break;
     case WM_DESTROY:
-      StopMonitoringClipboard();
+      stopMonitoringClipboard();
       break;
     }
     return result;
@@ -161,24 +162,24 @@ namespace
     switch (hash(method_call.method_name().c_str()))
     {
     case hash("monitorClipboard"):
-      MonitorClipboard();
+      monitorClipboard();
       break;
     case hash("stopMonitoringClipboard"):
-      StopMonitoringClipboard();
+      stopMonitoringClipboard();
       break;
     default:
       result->NotImplemented();
     }
   }
 
-  void ClipboardMonitorPlugin::MonitorClipboard()
+  void ClipboardMonitorPlugin::monitorClipboard()
   {
     HWND hWndRoot = GetAncestor(registrar->GetView()->GetNativeWindow(), GA_ROOT);
     hWndNextViewer = SetClipboardViewer(hWndRoot);
     // AddClipboardFormatListener(hWndRoot);
   }
 
-  void ClipboardMonitorPlugin::StopMonitoringClipboard()
+  void ClipboardMonitorPlugin::stopMonitoringClipboard()
   {
     HWND hWndRoot = GetAncestor(registrar->GetView()->GetNativeWindow(), GA_ROOT);
     ChangeClipboardChain(hWndRoot, hWndNextViewer);
