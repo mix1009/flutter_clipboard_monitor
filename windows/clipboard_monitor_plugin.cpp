@@ -14,68 +14,182 @@
 #include <memory>
 #include <sstream>
 
-namespace {
+// Inspiration:
+// https://stackoverflow.com/questions/65840288/monitor-clipboard-changes-c-for-all-applications-windows
+// https://toscode.gitee.com/leanflutter/window_manager/blob/main/windows/window_manager_plugin.cpp
 
-class ClipboardMonitorPlugin : public flutter::Plugin {
- public:
-  static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
+namespace
+{
 
-  ClipboardMonitorPlugin();
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>,
+                  std::default_delete<flutter::MethodChannel<flutter::EncodableValue>>>
+      channel = nullptr;
 
-  virtual ~ClipboardMonitorPlugin();
+  class ClipboardMonitorPlugin : public flutter::Plugin
+  {
+  public:
+    static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
 
- private:
-  // Called when a method is called on this plugin's channel from Dart.
-  void HandleMethodCall(
-      const flutter::MethodCall<flutter::EncodableValue> &method_call,
-      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
-};
+    ClipboardMonitorPlugin(flutter::PluginRegistrarWindows *registrar);
 
-// static
-void ClipboardMonitorPlugin::RegisterWithRegistrar(
-    flutter::PluginRegistrarWindows *registrar) {
-  auto channel =
-      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-          registrar->messenger(), "clipboard_monitor",
-          &flutter::StandardMethodCodec::GetInstance());
+    virtual ~ClipboardMonitorPlugin();
 
-  auto plugin = std::make_unique<ClipboardMonitorPlugin>();
+  private:
+    flutter::PluginRegistrarWindows *registrar;
+    HWND hWndNextViewer;
 
-  channel->SetMethodCallHandler(
-      [plugin_pointer = plugin.get()](const auto &call, auto result) {
-        plugin_pointer->HandleMethodCall(call, std::move(result));
-      });
+    // The ID of the WindowProc delegate registration.
+    int window_proc_id = -1;
 
-  registrar->AddPlugin(std::move(plugin));
-}
+    // Called for top-level WindowProc delegation.
+    std::optional<LRESULT> HandleWindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
+    // Called when a method is called on this plugin's channel from Dart.
+    void HandleMethodCall(
+        const flutter::MethodCall<flutter::EncodableValue> &method_call,
+        std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+    void MonitorClipboard();
+    void StopMonitoringClipboard();
 
-ClipboardMonitorPlugin::ClipboardMonitorPlugin() {}
+    char* encode(const wchar_t* wstr, unsigned int codePage);
+    wchar_t* decode(const char* encodedStr, unsigned int codePage);
+    char* LPWSTRToString(LPWSTR lstr);
+  };
 
-ClipboardMonitorPlugin::~ClipboardMonitorPlugin() {}
+  // static
+  void ClipboardMonitorPlugin::RegisterWithRegistrar(
+      flutter::PluginRegistrarWindows *registrar)
+  {
+    channel =
+        std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+            registrar->messenger(), "clipboard_monitor",
+            &flutter::StandardMethodCodec::GetInstance());
 
-void ClipboardMonitorPlugin::HandleMethodCall(
-    const flutter::MethodCall<flutter::EncodableValue> &method_call,
-    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
-  if (method_call.method_name().compare("getPlatformVersion") == 0) {
-    std::ostringstream version_stream;
-    version_stream << "Windows ";
-    if (IsWindows10OrGreater()) {
-      version_stream << "10+";
-    } else if (IsWindows8OrGreater()) {
-      version_stream << "8";
-    } else if (IsWindows7OrGreater()) {
-      version_stream << "7";
-    }
-    result->Success(flutter::EncodableValue(version_stream.str()));
-  } else {
-    result->NotImplemented();
+    auto plugin = std::make_unique<ClipboardMonitorPlugin>(registrar);
+
+    channel->SetMethodCallHandler(
+        [plugin_pointer = plugin.get()](const auto &call, auto result)
+        {
+          plugin_pointer->HandleMethodCall(call, std::move(result));
+        });
+
+    registrar->AddPlugin(std::move(plugin));
   }
-}
 
-}  // namespace
+  ClipboardMonitorPlugin::ClipboardMonitorPlugin(flutter::PluginRegistrarWindows *registrar) : registrar(registrar)
+  {
+    window_proc_id =
+        registrar->RegisterTopLevelWindowProcDelegate([this](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
+                                                      { return HandleWindowProc(hwnd, message, wparam, lparam); });
+  }
+
+  ClipboardMonitorPlugin::~ClipboardMonitorPlugin()
+  {
+    registrar->UnregisterTopLevelWindowProcDelegate(window_proc_id);
+  }
+
+  char* ClipboardMonitorPlugin::encode(const wchar_t* wstr, unsigned int codePage)
+  {
+      int sizeNeeded = WideCharToMultiByte(codePage, 0, wstr, -1, NULL, 0, NULL, NULL);
+      char* encodedStr = new char[sizeNeeded];
+      WideCharToMultiByte(codePage, 0, wstr, -1, encodedStr, sizeNeeded, NULL, NULL);
+      return encodedStr;
+  }
+
+  wchar_t* ClipboardMonitorPlugin::decode(const char* encodedStr, unsigned int codePage)
+  {
+    int sizeNeeded = MultiByteToWideChar(codePage, 0, encodedStr, -1, NULL, 0);
+    wchar_t* decodedStr = new wchar_t[sizeNeeded];
+    MultiByteToWideChar(codePage, 0, encodedStr, -1, decodedStr, sizeNeeded );
+    return decodedStr;
+  }
+
+  std::optional<LRESULT> ClipboardMonitorPlugin::HandleWindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+  {
+    std::optional<LRESULT> result;
+
+    LPWSTR  lstr; 
+    HGLOBAL hglb; 
+
+    switch (message)
+    {
+    case WM_CHANGECBCHAIN:
+      // If the next window is closing, repair the chain.
+      if ((HWND)wParam == hWndNextViewer)
+        hWndNextViewer = (HWND)lParam;
+      // Otherwise, pass the message to the next link.
+      else if (hWndNextViewer != NULL)
+        SendMessage(hWndNextViewer, message, wParam, lParam);
+      break;
+    case WM_DRAWCLIPBOARD:
+      if (IsClipboardFormatAvailable(CF_UNICODETEXT) && OpenClipboard(nullptr)) {
+        hglb = GetClipboardData(CF_UNICODETEXT);
+        if (hglb != NULL) {
+          lstr = (LPWSTR)GlobalLock(hglb);
+          if (lstr != NULL) {
+            char* str = encode(lstr, CP_UTF8);
+//            printf("%s\n",str);
+            channel->InvokeMethod("cliptext", std::make_unique<flutter::EncodableValue>(std::string(str)));
+            delete[]str;
+            GlobalUnlock(hglb);
+          }
+        }
+        CloseClipboard();
+      }
+      SendMessage(hWndNextViewer, message, wParam, lParam);
+      break;
+    case WM_CLIPBOARDUPDATE:
+      break;
+    case WM_DESTROYCLIPBOARD:
+      break;
+    case WM_DESTROY:
+      StopMonitoringClipboard();
+      break;
+    }
+    return result;
+  }
+
+  constexpr unsigned int hash(const char *s, int off = 0)
+  {
+    return !s[off] ? 5381 : (hash(s, off + 1) * 33) ^ s[off];
+  }
+
+  void ClipboardMonitorPlugin::HandleMethodCall(
+      const flutter::MethodCall<flutter::EncodableValue> &method_call,
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result)
+  {
+    std::ostringstream version_stream;
+    switch (hash(method_call.method_name().c_str()))
+    {
+    case hash("monitorClipboard"):
+      MonitorClipboard();
+      break;
+    case hash("stopMonitoringClipboard"):
+      StopMonitoringClipboard();
+      break;
+    default:
+      result->NotImplemented();
+    }
+  }
+
+  void ClipboardMonitorPlugin::MonitorClipboard()
+  {
+    HWND hWndRoot = GetAncestor(registrar->GetView()->GetNativeWindow(), GA_ROOT);
+    hWndNextViewer = SetClipboardViewer(hWndRoot);
+    // AddClipboardFormatListener(hWndRoot);
+  }
+
+  void ClipboardMonitorPlugin::StopMonitoringClipboard()
+  {
+    HWND hWndRoot = GetAncestor(registrar->GetView()->GetNativeWindow(), GA_ROOT);
+    ChangeClipboardChain(hWndRoot, hWndNextViewer);
+    // RemoveClipboardFormatListener(hWndRoot);
+  }
+
+} // namespace
 
 void ClipboardMonitorPluginRegisterWithRegistrar(
-    FlutterDesktopPluginRegistrarRef registrar) {
+    FlutterDesktopPluginRegistrarRef registrar)
+{
   ClipboardMonitorPlugin::RegisterWithRegistrar(
       flutter::PluginRegistrarManager::GetInstance()
           ->GetRegistrar<flutter::PluginRegistrarWindows>(registrar));
