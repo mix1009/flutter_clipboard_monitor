@@ -1,43 +1,37 @@
-group 'com.example.clipboard_monitor'
-version '1.0-SNAPSHOT'
-
-buildscript {
-    ext.kotlin_version = '1.3.50'
-    repositories {
-        google()
-        jcenter()
-    }
-
-    dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
-rootProject.allprojects {
-    repositories {
-        google()
-        jcenter()
-    }
-}
-
+// The Android library build.gradle for clipboard_monitor plugin.
+// Plugin versions are managed by the consuming app's settings.gradle.
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+group 'com.example.clipboard_monitor'
+version '1.0-SNAPSHOT'
+
 android {
-    compileSdkVersion 29
+    namespace 'com.example.clipboard_monitor'
+    compileSdk 36
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
+
     defaultConfig {
-        minSdkVersion 16
+        minSdk 24
     }
-    lintOptions {
+
+    lint {
         disable 'InvalidPackage'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
     }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    // kotlin-stdlib is bundled with Kotlin 1.4+; no explicit dep needed
 }

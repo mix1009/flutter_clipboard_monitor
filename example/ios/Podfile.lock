@@ -1,5 +1,5 @@
 PODS:
-  - clipboard_monitor (0.0.1):
+  - clipboard_monitor (0.9.3):
     - Flutter
   - Flutter (1.0.0)
 
@@ -14,9 +14,9 @@ EXTERNAL SOURCES:
     :path: Flutter
 
 SPEC CHECKSUMS:
-  clipboard_monitor: 4189d994f3b3891fdaad682b29add54f48287b0e
-  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+  clipboard_monitor: c3e2cc1b30c0484066add8c4dc4e8594c81bd401
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
 
-PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+PODFILE CHECKSUM: d2243213672c3c48aae53c36642ba411a6be7309
 
-COCOAPODS: 1.9.3
+COCOAPODS: 1.16.2
